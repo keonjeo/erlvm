@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+erlvm_export_path() {
+	export ERLVM_PATH_BACKUP="$PATH"
+	export PATH="$ERLVM_ROOT/bin:$PATH"
+	export ERLVM_ROOT
+	export ERLVM_ROOT_BACKUP
+}

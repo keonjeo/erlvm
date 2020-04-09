@@ -1,0 +1,7 @@
+[[ ! -d $ERLVM_ROOT/logs ]] && mkdir -p $ERLVM_ROOT/logs > /dev/null 2>&1
+
+export ERLVM_VERSION=$(cat "$ERLVM_ROOT/VERSION")
+export PATH="$PATH:$ERLVM_ROOT/bin"
+export ERLVM_PATH_BACKUP="$PATH"
+#[ -f "$ERLVM_ROOT/environments/default" ] && . "$ERLVM_ROOT/environments/default"
+. "$ERLVM_ROOT/scripts/env/erlvm"

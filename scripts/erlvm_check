@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+. "$ERLVM_ROOT/scripts/load_functions"
+
+error_message=""
+
+# Check for git
+command -v git &> /dev/null ||
+	error_message="${error_message}
+
+Could not find git, please install it on your system.
+
+"
+
+if [ -n "$error_message" ]; then
+	erlvm_error "$error_message"
+	exit 1
+else
+	# All good!
+	exit 0
+fi

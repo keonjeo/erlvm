@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+if [ -z "$ERLVM_ROOT" ]; then
+    erlvm_error 'ERROR: ERLVM_ROOT is not set! Please add the following line to your .bashrc or .profile
+
+    [[ -s "$HOME/.erlvm/scripts/erlvm" ]] && source "$HOME/.erlvm/scripts/erlvm"
+    '
+fi
+
+. "$ERLVM_ROOT/scripts/load_functions" || exit 1
+
+command=$1
+
+# Check the prerequisites for the erlvm installation
+"$ERLVM_ROOT/scripts/erlvm_check"
+
+if [[ "$?" != "0" ]]; then
+	erlvm_fatal "Missing requirements."
+fi
+
+if [[ $command == "version" ]]; then
+	erlvm_message "Erlang Version Manager v$ERLVM_VERSION installed at $ERLVM_ROOT"
+else
+	if [ -f "$ERLVM_ROOT/scripts/$command" ]; then
+		shift
+		"$ERLVM_ROOT/scripts/$command" "$@"
+	elif [[ -z $command || $command = help ]]; then
+		erlvm_echo "Usage: erlvm [command]
+
+Description:
+  ERLVM is the Erlang Version Manager.
+
+Commands:
+  version    - print the erlvm version number
+  help       - display this usage text
+  listall    - list available versions
+  install    - install erlang version
+  uninstall  - uninstall erlang version
+  list       - list installed erlang versions
+  use        - select a erlang version to use (--default to set permanently)
+  implode    - completely remove erlvm
+"
+	else
+		erlvm_error "Unrecognized command line argument: '$command'"
+	fi
+fi

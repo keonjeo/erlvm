@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+. "$ERLVM_ROOT/scripts/load_functions" || return 1
+
+erlvm() {
+	if [[ "$ERLVM_ROOT" == "" ]]; then
+		erlvm_error "ERLVM_ROOT not set. Please source \$ERLVM_ROOT/scripts/erlvm"
+		return $?
+	fi
+
+	if [[ -d $ERLVM_ROOT/.git ]]; then
+		mv "$ERLVM_ROOT/.git" "$ERLVM_ROOT/git.bak" ||
+			erlvm_error "Failed to move git info out of the way"
+	fi
+
+	if [[ ! -d $ERLVM_ROOT ]]; then
+		erlvm_error "ERLVM_ROOT does not exist, please reinstall erlvm!"
+		return $?
+	fi
+
+	[[ ! -d $ERLVM_ROOT/logs ]] && mkdir -p "$ERLVM_ROOT/logs" > /dev/null 2>&1
+
+	if [[ "$1" == "use" ]]; then
+		. "$ERLVM_ROOT/scripts/env/erlvm_use"
+		shift
+		erlvm_use "$@"
+	elif [[ "$1" == "implode" ]]; then
+		. "$ERLVM_ROOT/scripts/env/erlvm_implode"
+		erlvm_implode
+	else
+		"$ERLVM_ROOT/bin/erlvm" "$@"
+	fi
+}
+

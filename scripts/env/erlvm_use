@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+erlvm_use() {
+	if [[ "$1" == "-h" ]]; then
+		erlvm_message "Usage: erlvm use VERSION"
+		return 1
+	fi
+
+	if [[ "x$1" == x ]]; then
+		erlvm_error "Please specify the version!"
+		return 1
+	fi
+
+	local fuzzy_match = "22.3"
+	erlvm_message "Now using version $fuzzy_match"
+}

@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+. "$ERLVM_ROOT/scripts/load_functions" || return 1
+
+erlvm_implode() {
+	erlvm_message "+---------------------------------------------------------------+"
+	erlvm_message "|        You want to remove the erlvm tool on the system.        |"
+	erlvm_message "+---------------------------------------------------------------+"
+	echo ""
+	echo -n "Are you sure? [Y/n] "
+	read reply
+	echo ""
+
+	if [[ ! $reply =~ ^[Yy]$ ]]; then
+		erlvm_message "Action cancelled"
+	else
+		erlvm_reinstall_tip
+		backup_erlvm_root_directory
+		remove_erlvm_root_directory
+		if [[ $? == 1 ]]; then
+			erlvm_dev_info "Fail to remove erlvm_root directory"
+			erlvm_warn "Failed to uninstall ERLVM!"
+			recovery_erlvm_root_directory
+		else
+			erlvm_dev_info "Remove erlvm_root directory successfully!"
+			erlvm_message "ERLVM has been removed successfully!"
+		fi
+	fi
+}
+
+erlvm_reinstall_tip() {
+	erlvm_dev_info "erlvm_reinstall_tip"
+	[[ -s "$ERLVM_ROOT/scripts/check_erlvm_directory" ]] && source "$ERLVM_ROOT/scripts/check_erlvm_directory"
+}
+
+backup_erlvm_root_directory() {
+	erlvm_dev_info "backup_erlvm_root_directory"
+	[[ -s $ERLVM_ROOT_BACKUP ]] && rm -rf $ERLVM_ROOT_BACKUP
+	cp -rp $ERLVM_ROOT $ERLVM_ROOT_BACKUP
+}
+
+remove_erlvm_root_directory() {
+	rm -rf "$ERLVM_ROOT"
+}
+
+recovery_erlvm_root_directory() {
+	erlvm_dev_info "recovery_erlvm_root_directory"
+	[[ ! -d $ERLVM_ROOT_BACKUP ]] && erlvm_warn "$ERLVM_ROOT_BACKUP does NOT exist on the system."
+	[[ -d $ERLVM_ROOT_BACKUP ]] && cp -rp $ERLVM_ROOT_BACKUP $ERLVM_ROOT
+	reload_erlvm
+}
+
+reload_erlvm() {
+	erlvm_dev_info "reload_erlvm"
+	[[ -s "$ERLVM_ROOT/scripts/erlvm" ]] && source "$ERLVM_ROOT/scripts/erlvm"
+}

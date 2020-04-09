@@ -1,0 +1,195 @@
+#!/usr/bin/env bash
+
+. "$ERLVM_ROOT/scripts/load_functions"
+
+ERLANG_SOURCE_URL="https://github.com/erlang/otp.git"
+# You can set ERLANG_SOURCE_PROXY_URL to improve the speed of downloading
+# export ERLANG_SOURCE_PROXY_URL=https://gitee.com/mirrors/otp.git
+
+function show_install_usage() {
+    echo ""
+	erlvm_message "Usage: erlvm install [version] [options]"
+	erlvm_message "    -s,  --source=SOURCE      Install Erlang from specified source."
+	erlvm_message "    -h,  --help               Display this message."
+    echo ""
+    echo ""
+}
+
+
+read_command_line() {
+    erlvm_dev_info "The parameters of install: $@ , count: $# "
+
+    if [[ $# -eq 0 ]]; then
+        show_install_usage
+        exit 65 # Bad arguments
+    fi
+
+    if [[ $1 = "-h" || $1 = "--help" ]]; then
+        show_install_usage
+        exit 0
+    fi
+
+	VERSION=$1
+	if [[ "${VERSION:0:1}" != "-" ]]; then
+		shift
+	else
+		erlvm_warn "Invalid version: $1"
+		show_install_usage
+		exit 1
+	fi
+
+	for i in "$@"; do
+		case $i in
+			-s=*|--source=*)
+				ERLANG_SOURCE_URL=$(echo "$i" | sed 's/[-a-zA-Z0-9]*=//')
+			;;
+			*)
+				erlvm_warn "Invalid option $i"
+				show_install_usage
+				exit 65 # Bad arguments
+			;;
+		esac
+	done
+}
+
+download_erlang_source_code() {
+    ERLANG_CACHE_PATH=$ERLVM_ROOT/archive/erlang
+    
+    # only for local development, remember to export ERLVM_DEV env variable
+    [[ -n $ERLVM_DEV && -d ~/.erlvm_archive.back && -d $ERLVM_ROOT/archive ]] && rm -rf $ERLVM_ROOT/archive
+    [[ -n $ERLVM_DEV && -d ~/.erlvm_archive.back ]] && cp -rp ~/.erlvm_archive.back $ERLVM_ROOT/archive && return
+
+    erlvm_dev_info "download_erlang_source_code"
+
+    [[ ! -d $ERLVM_ROOT/archive ]] && mkdir -p $ERLVM_ROOT/archive
+	[[ -d $ERLANG_CACHE_PATH ]] && return
+    [[ -n $ERLANG_SOURCE_PROXY_URL ]] && ERLANG_SOURCE_URL=$ERLANG_SOURCE_PROXY_URL
+	
+    erlvm_message "Downloading Erlang source code..."
+	git clone "$ERLANG_SOURCE_URL" "$ERLANG_CACHE_PATH" >> "$ERLVM_ROOT/logs/erlang-download.log"  2>&1 ||
+		erlvm_error "Couldn't download Erlang source code. Check the logs $ERLVM_ROOT/logs/erlang-download.log"
+}
+
+check_erlang_tag() {
+    erlvm_dev_info "VERSION: $VERSION"
+    version=$(cd $ERLANG_CACHE_PATH && git show-ref --heads --tags | awk -F/ '{ print $NF }' | $SORT_PATH | $GREP_PATH "$VERSION" | $HEAD_PATH -n 1 | $GREP_PATH "$VERSION")
+}
+
+update_erlang_source_code() {
+	erlvm_message "Updating Erlang source..."
+	(cd "$ERLANG_CACHE_PATH" && git pull >> "$ERLVM_ROOT/logs/erlang-download.log" 2>&1 ||
+		erlvm_error "Couldn't get latest Erlang version info. Check the logs $ERLVM_ROOT/logs/erlang-download.log")
+}
+
+copy_erlang_source() {
+	git clone -b "$ERLANG_VERSION" "$ERLANG_CACHE_PATH" "$ERLANG_INSTALL_ROOT" >> "$ERLVM_ROOT/logs/erlang-$ERLANG_VERSION-install.log" 2>&1 ||
+		erlvm_error "Couldn't copy source to target folder. Check the logs $ERLVM_ROOT/logs/erlang-$ERLANG_VERSION-install.log"
+}
+
+compile_erlang() {
+	erlvm_message " * Compiling, maybe it will take couples of minutes..."
+	if [ ! -f "$ERLANG_INSTALL_ROOT/VERSION" ]; then echo "$ERLANG_VERSION" > "$ERLANG_INSTALL_ROOT/VERSION"; fi &&
+    if [[ -n $ERLVM_DEV ]]; then
+        cd "$ERLANG_INSTALL_ROOT" && make clean test
+        if [[ $? -ne 0 ]]; then
+            rm -rf "$ERLANG_INSTALL_ROOT" && erlvm_fatal "Failed to compile, Please go to check the logs."
+        fi
+    else
+	    cd "$ERLANG_INSTALL_ROOT" && make clean test &> "$ERLVM_ROOT/logs/erlang-$ERLANG_VERSION-compile.log"
+	    if [[ $? -ne 0 ]]; then
+            rm -rf "$ERLANG_INSTALL_ROOT" && erlvm_fatal "Failed to compile. Check the logs at $ERLVM_ROOT/logs/erlang-$ERLANG_VERSION-compile.log"
+        fi
+    fi
+}
+
+check_kerl_if_exists() {
+	command -v kerl &> /dev/null
+}
+
+
+# check if the erlang language exists in your system.
+# The only prerequisite for Erlang is Erlang, version 21.0 or later.
+check_erlang_if_exists() {
+	command -v erl &> /dev/null
+
+	if [[ $? -ne 0 ]]; then
+		error_message="
+		Could not find erl, please install it on your system.
+		"
+		erlvm_error "$error_message"
+		exit 1
+	fi
+}
+
+erlang_current_version () {
+	command erl -eval '{ok, Version} = file:read_file(filename:join([code:root_dir(), "releases", erlang:system_info(otp_release), "OTP_VERSION"])), io:fwrite(Version), halt().' -noshell
+}
+
+install_erlang() {
+	ERLANG_INSTALL_ROOT=$ERLVM_ROOT/erlangs/$ERLANG_VERSION
+	trap 'rm -rf $ERLANG_INSTALL_ROOT; erlvm_fatal "Cancelled!"' INT
+
+	# # Check for existing install
+	# if [[ -d "$ERLANG_INSTALL_ROOT" ]]; then
+	# 	if [[ -f "$ERLANG_INSTALL_ROOT/manifest" ]]; then
+	# 		erlvm_message "erlang $ERLANG_VERSION has already been installed!"
+	# 		exit 0
+	# 	fi
+	# 	erlvm_warn "Removing corrupt install..."
+	# 	erlvm uninstall "$ERLANG_VERSION"
+	# fi
+
+	erlvm_message "Installing Erlang $version..."
+
+	check_kerl_if_exists
+	if [[ $? -ne 0 ]]; then
+		erlvm_dev_info "going to install kerl..."
+		KERL_HOME=~/.kerl
+		KERL_BIN=$KERL_HOME/bin
+		mkdir -p $KERL_BIN
+
+		# Download kerl target file into KERL_BIN directory
+		curl -o $KERL_BIN/kerl -O https://raw.githubusercontent.com/kerl/kerl/master/kerl
+		[[ -f $KERL_BIN/kerl ]] && chmod a+x $KERL_BIN/kerl
+	fi
+
+	check_erlang_if_exists
+
+	copy_erlang_source
+
+	# compile_erlang
+    
+    echo "export PATH=$PATH:$ERLANG_INSTALL_ROOT/bin:$KERL_BIN" >> "$ERLVM_ROOT/scripts/erlvm"
+    erlvm_success_echo ""
+    erlvm_success_echo ""
+    erlvm_success_echo "Congratulations! Erlang $ERLANG_VERSION has been installed successfully!"
+    erlvm_success_echo "Please restart your terminal session, or to get started execute the following command to make it effective."
+    erlvm_success_echo ""
+    erlvm_success_echo "  \`source ${ERLVM_ROOT}/scripts/erlvm\`  "
+    erlvm_success_echo ""
+}
+
+install_erlang_from_repository() {
+	download_erlang_source_code
+
+	check_erlang_tag
+
+	if [[ $? -ne 0 ]]; then
+		update_erlang_source_code
+		check_erlang_tag || erlvm_warn "Unrecognized Erlang version" && return
+	fi
+
+    ERLANG_VERSION=$version
+	install_erlang
+}
+
+main() {
+	trap 'erlvm_warn "Canceled!"' INT
+	read_command_line $@
+	[[ "$VERSION" == "" ]] && erlvm_warn "No version specified"
+    erlvm_dev_info "going to install the erlang version: $VERSION"
+
+	install_erlang_from_repository
+}
+
+main $@

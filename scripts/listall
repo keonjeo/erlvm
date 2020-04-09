@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+. "$ERLVM_ROOT/scripts/load_functions"
+
+show_listall_usage() {
+	erlvm_info "Usage: erlvm listall [options]"
+	erlvm_info "    -a, --all                 List all tags."
+	erlvm_info "    -h, --help                Display this message."
+}
+
+read_listall_command_line() {
+
+	for i in "$@"; do
+		case $i in
+			-a|--all)
+			;;
+			-h|--help*)
+				show_listall_usage
+				exit 0
+			;;
+			*)
+				erlvm_warn "Invalid option $i"
+				show_listall_usage
+				exit 65 # Bad arguments
+			;;
+		esac
+	done
+}
+
+read_listall_command_line "$@"
+
+erlvm_message ""
+erlvm_message ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+erlvm_message ">>>                  Available Erlang Versions List                   >>>"
+erlvm_message ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+erlvm_message ""
+
+versions=$(git ls-remote -t https://github.com/erlang/otp.git | awk -F/ '{ print $NF }' | awk -F"^" '{print $1}' | $SORT_PATH)
+
+if [[ $? -ne 0 ]]; then
+	erlvm_error "Failed to get version list from github.com/erlang/otp repository"
+fi
+
+for version in $versions; do
+	echo "   $version"
+done | sort -V
+
+erlvm_message ""
+erlvm_message ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+erlvm_message ">>>                                                                   >>>"
+erlvm_message ">>>   use 'erlvm install [version]' to install your erlang version    >>>"
+erlvm_message ">>>                                                                   >>>"
+erlvm_message ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+erlvm_message ""

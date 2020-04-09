@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+erlvm() {
+    erlvm_dev_info "check erlvm directory if exists on the system."
+	if [[ ! -d $ERLVM_ROOT ]]; then
+		echo ""
+		erlvm_error "ERLVM_ROOT: $ERLVM_ROOT does not exist, please reinstall ERLVM!"
+		echo ""
+		echo ""
+		erlvm_message " If you are using bash on your terminal, you could execute the following command on your terminal. "
+		erlvm_message "+--------------------------------------------------------------------------------------------------------------+"
+		erlvm_message "|                                                                                                              |"
+		erlvm_message "|   bash < <(curl -s -S -L https://raw.githubusercontent.com/keonjeo/erlvm/master/binscripts/erlvm-installer)    |"
+		erlvm_message "|                                                                                                              |"
+		erlvm_message "+--------------------------------------------------------------------------------------------------------------+"
+		echo ""
+		echo ""
+		echo ""
+		erlvm_message " If you are using zsh on your terminal, you could execute the following command on your terminal.  "
+		erlvm_message "+--------------------------------------------------------------------------------------------------------------+"
+		erlvm_message "|                                                                                                              |"
+		erlvm_message "|   zsh  < <(curl -s -S -L https://raw.githubusercontent.com/keonjeo/erlvm/master/binscripts/erlvm-installer)    |"
+		erlvm_message "|                                                                                                              |"
+		erlvm_message "+--------------------------------------------------------------------------------------------------------------+"
+		echo ""
+	fi
+}
