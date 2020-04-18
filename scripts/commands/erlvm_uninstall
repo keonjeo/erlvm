@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+# uninstall the erlang version from system
+erlvm_uninstall() {
+    local VERSION=$1
+    if [[ ! -d $ERLANG_VERSIONS_LOCATION/$VERSION ]]; then
+        erlvm_error "Erlang version $VERSION has not been installed."
+        return 1
+    fi
+
+    local default_version="$(cat $ERLVM_HOME/erlvm_config/erlang_default)"
+    local current_version="$(cat $ERLVM_HOME/erlvm_config/erlang_current)"
+
+    erlvm_message "Uninstalling $VERSION..."
+    rm -rf $ERLANG_VERSIONS_LOCATION/$VERSION
+
+    [[ "$default_version" == "$VERSION" ]] && echo "" > $ERLVM_HOME/erlvm_config/erlang_default
+    if [[ "$current_version" == "$VERSION" ]]; then
+        if [[ -L $ERLANG_ROOT/bin ]]; then
+            rm -rf $ERLANG_ROOT/bin
+        fi
+        echo "" > $ERLVM_HOME/erlvm_config/erlang_current
+    fi
+
+    erlvm_message "Erlang version $VERSION has been uninstalled successfully"
+}

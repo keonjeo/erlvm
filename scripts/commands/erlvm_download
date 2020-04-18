@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+# receive the version name to be downloaded. 
+erlvm_download() {
+    local VERSION="$1"
+    local ERLANG_VERSION_ZIP_FILE=$FILE_PREFIX-$VERSION.$FILE_EXTENSION
+
+    # Download version only if it does not existed cached
+    [[ -n $ERLANG_GITEE ]] && ERLANG_DOWNLOAD_URL=$ERLANG_GITEE_DOWNLOAD_URL
+
+    [[ ! -d $ERLANG_TARS_LOCATION ]] && mkdir -p $ERLANG_TARS_LOCATION
+    [[ -f "$ERLANG_TARS_LOCATION/$ERLANG_VERSION_ZIP_FILE" ]] && \
+        erlvm_dev_info "$ERLANG_VERSION_ZIP_FILE has existed in the $ERLANG_TARS_LOCATION directory, it will be removed." && \
+        rm -rf "$ERLANG_TARS_LOCATION/$ERLANG_VERSION_ZIP_FILE"
+
+    if [[ ! -f "$ERLANG_TARS_LOCATION/$ERLANG_VERSION_ZIP_FILE" ]]; then
+
+        # NOT download zip file every time when you are developing erlvm project
+        [[ -n $ERLVM_DEV ]] && [[ -d ~/.erlvm_erlang_tars.back ]] && rm -rf ~/.erlvm/erlang_tars
+        [[ -n $ERLVM_DEV ]] && [[ -d ~/.erlvm_erlang_tars.back ]] && cp -rp ~/.erlvm_erlang_tars.back ~/.erlvm/erlang_tars && return 0
+
+        fetch_available_erlang_versions
+        erlvm_dev_info "AVAILABLE_ERLANG_VERSIONS => $AVAILABLE_ERLANG_VERSIONS "
+        if [[ -z "$AVAILABLE_ERLANG_VERSIONS" ]]; then
+            erlvm_fatal "Failed to fetch available Erlang versions"
+        fi
+        
+        if [[ -z $(echo "$AVAILABLE_ERLANG_VERSIONS" | grep "$1") ]]; then
+            erlvm_fatal "Erlang v$VERSION is not available at $ERLANG_DOWNLOAD_URL"
+        else
+            erlvm_dev_info "wget --progress=bar -P $ERLANG_TARS_LOCATION $ERLANG_DOWNLOAD_URL/$ERLANG_VERSION_ZIP_FILE"
+            wget --progress=bar -P $ERLANG_TARS_LOCATION $ERLANG_DOWNLOAD_URL/$ERLANG_VERSION_ZIP_FILE
+        fi
+    fi
+}

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+for command_file in $ERLVM_ROOT/scripts/commands/*; do
+	. "$command_file"
+done

@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+. "$ERLVM_ROOT/scripts/load_functions" || exit 1
+. "$ERLVM_ROOT/scripts/load_global_variable" || exit 1
+. "$ERLVM_ROOT/scripts/load_commands" || exit 1
+
+if [ -z "$ERLVM_ROOT" ]; then
+    erlvm_error 'ERROR: ERLVM_ROOT is not set! Please add the following line to your .bashrc or .profile
+    
+        [[ -s "$HOME/.erlvm/scripts/erlvm" ]] && source "$HOME/.erlvm/scripts/erlvm"
+
+    '
+    exit 1
+fi
+
+command="$1"
+[[ $command == "" ]] && erlvm_help
+[[ $command == "" ]] && exit 0
+
+check_command_if_need_to_pass_parameter() {
+    case $command in
+        version | help | list_remote) echo "false";;
+        *) echo "true";;
+    esac
+}
+
+if [[ -f "$ERLVM_ROOT/scripts/commands/erlvm_$command" ]] ; then
+    result=$(check_command_if_need_to_pass_parameter)
+    if [[ $result == "false" ]]; then
+        erlvm_$command $@ 
+        exit $?
+    else
+        shift
+        erlvm_$command $@
+        exit $?
+    fi
+else
+    erlvm_fatal "Unrecognized command line argument: '$command'"
+fi

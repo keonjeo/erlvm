@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+. $ERLVM_ROOT/scripts/global_variable

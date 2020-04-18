@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+check_dependence() {
+	local missing=""
+
+	# Check for git
+	command -v git &> /dev/null || missing="git, "
+
+	# Check for wget
+	command -v wget &> /dev/null || missing="${missing}wget, "
+
+	# Check for unzip
+	command -v unzip &> /dev/null || missing="${missing}unzip, "
+
+	# Check for make
+	command -v make &> /dev/null || missing="${missing}make, "
+
+	# Check for autoconf
+	command -v autoconf &> /dev/null || missing="${missing}autoconf, "
+
+	# Check for libncurses5-dev
+	dpkg -l | grep 'libncurses5-dev' &> /dev/null || missing="${missing}libncurses5-dev, "
+
+	if [[ -n "$missing" ]]; then
+		echo "Could not find ${missing}please install it on your system."
+	else
+		# All good!
+		echo ""
+	fi
+}

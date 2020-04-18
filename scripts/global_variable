@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+# ERLVM_DEV env variable for development
+# export ERLVM_DEV=true
+ERLVM_HOME=$HOME"/.erlvm"
+ERLANG_TARS_LOCATION="$ERLVM_HOME/erlang_tars"
+ERLANG_VERSIONS_LOCATION="$ERLVM_HOME/erlang_versions"
+
+ERLANG_GITHUB="https://github.com/erlang/otp.git"
+ERLANG_DOWNLOAD_URL="https://github.com/erlang/otp/archive"
+
+# If you want to download the source code from gitee, you need to export ERLANG_GITEE ENV variable
+# export ERLANG_GITEE="https://gitee.com/mirrors/otp.git"
+ERLANG_GITEE_DOWNLOAD_URL="https://gitee.com/mirrors/otp/repository/archive"
+
+FILE_EXTENSION="zip"
+FILE_PREFIX="OTP"

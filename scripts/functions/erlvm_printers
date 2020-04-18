@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+erlvm_fatal() {
+	tput sgr0
+	tput setaf 1 # Red color
+    echo "[ERROR] $1" >&2
+	tput sgr0
+	exit 1
+}
+
+erlvm_error() {
+	tput sgr0
+	tput setaf 1 # Red color
+    echo "[ERROR] $1" >&2
+	tput sgr0
+}
+
+erlvm_warn() {
+	tput sgr0
+	tput setaf 3 # Yellow color
+    echo "[WARN] $1" >&1
+	tput sgr0
+}
+
+erlvm_info() {
+	tput sgr0
+	tput setaf 2 # Green color
+    echo "[INFO] $1" >&1
+	tput sgr0
+}
+
+erlvm_dev_info() {
+	tput sgr0
+	tput setaf 2 # Green color
+    if [[ -n $ERLVM_DEV ]]; then
+        echo "[INFO] $(date +'%Y-%m-%dT%H:%M:%S%z'): $@" >&1
+    else
+        echo "[INFO] $(date +'%Y-%m-%dT%H:%M:%S%z'): $@" > /dev/null
+    fi
+	tput sgr0
+}
+
+erlvm_echo() {
+    tput sgr0
+	tput setaf 4 # Blue color
+    echo "$1" >&1
+	tput sgr0
+}
+
+erlvm_success_echo() {
+    tput sgr0
+    tput setaf 5
+    echo "$1" >&1
+    tput sgr0
+}
+
+erlvm_message() {
+    tput sgr0
+    tput setaf 2 # Green color
+    echo "$1" >&1
+    tput sgr0
+}

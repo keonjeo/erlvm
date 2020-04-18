@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+# remove the erlang version from the erlvm space
+erlvm_remove() {
+    local VERSION=$1
+    local ERLANG_VERSION_ZIP_FILE=$FILE_PREFIX-$VERSION.$FILE_EXTENSION
+
+    erlvm_uninstall $VERSION
+
+    if [[ -f $ERLANG_TARS_LOCATION/$ERLANG_VERSION_ZIP_FILE ]]; then
+        erlvm_message "Removing $VERSION..."
+        rm -rf $ERLANG_TARS_LOCATION/$ERLANG_VERSION_ZIP_FILE
+        erlvm_message "Removed successfully"
+    else
+        erlvm_message "$VERSION not downloaded"
+        return 0
+    fi
+}

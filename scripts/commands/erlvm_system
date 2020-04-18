@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+# remove alter the PATH variable, leaving only the system version of ERLANG available.
+erlvm_system() {
+    ## use sed "s,<pattern>,<replacement>" To remove any reference of erlang, duplicated ::,: from the beginning and from the end of path
+    PATH="$(echo $PATH | sed -e "s,$ERLANG_ROOT/bin,,g ; s,^:,, ; s,::,:,g ; s,:$,,")"
+    export PATH
+    erlvm_dev_info "PATH => $PATH"
+}

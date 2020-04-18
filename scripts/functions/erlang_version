@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+. $ERLVM_ROOT/scripts/functions/erlvm_printers
+
+erlang_version () {
+	if [[ -z "$(which erl)" ]]; then
+
+		local result=$(ls ~/.erlvm/erlang_versions)
+		if [[ -n "$result" ]]; then
+			echo ""
+			erlvm_warn "Sorry guys. I can't find the erl command on your system. But I can find other versions has been installed on your system."
+			echo ""
+			echo ""
+			erlvm list
+			return 1
+		fi
+
+		erlvm_error "
+	Sorry guys. I can't find the erl command on your system.
+	
+	Please execute 'erlvm install [version]' to install your erlang on your system.
+	"
+		return 1
+	else
+		command erl -eval '{ok, Version} = file:read_file(filename:join([code:root_dir(), "releases", erlang:system_info(otp_release), "OTP_VERSION"])), io:fwrite(Version), halt().' -noshell
+	fi
+}
+
+erlang() {
+	if [[ $1 == "-v" ]] || [[ $1 == "-V" ]] || [[ $1 == "version" ]] || [[ $1 == "--version" ]]; then
+		erlang_version
+	else
+		command erl
+	fi
+}

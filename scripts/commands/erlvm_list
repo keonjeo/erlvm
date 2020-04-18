@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+
+# show a list of all installed version in the erlvm space
+erlvm_list() {
+    ## Colors
+    local LIGHT_GREEN="\e[1;32m"
+    local LIGHT_CYAN="\e[1;36m"
+    local DARK_YELLOW="\e[1;33m"
+    local NO_COLOR="\e[0m"
+    local COLOR_SUPPORT="FALSE"
+
+    # See if terminal supports colors...
+    local tcolors=$(tput colors)
+
+    # Just set a flag in case color is support by this shell
+    if [[ -n "$tcolors" ]] && [[ $tcolors -ge 8 ]]; then
+        COLOR_SUPPORT="TRUE"
+    fi
+
+    erlvm_message "Installed Erlang versions on this system"
+    erlvm_message ""
+
+    # Get the default version
+    local default_version="$(cat $ERLVM_HOME/erlvm_config/erlang_default)"
+    local current_version="$(cat $ERLVM_HOME/erlvm_config/erlang_current)"
+
+    ## Do that inside a subshell to not alter the user settings
+    (
+    unalias ls >> /dev/null 2>&1
+    for directory in $(ls $ERLANG_VERSIONS_LOCATION | sort | perl -e 'print reverse <>'); do
+        local ver="${directory}"
+
+        # Apply symbols and colors
+        if [[ "$ver" == "$default_version" && "$ver" == "$current_version" ]]; then
+            ver="=* $ver"
+
+            # Show default and current as 'green'
+            if [[ "$COLOR_SUPPORT" == "TRUE" ]]; then
+                ver="${LIGHT_GREEN}$ver${NO_COLOR}"
+            fi
+
+        elif [[ "$ver" == "$default_version" ]]; then
+            ver=" * $ver"
+
+            # Show default (but not current) as 'yellow'
+            if [[ "$COLOR_SUPPORT" == "TRUE" ]]; then
+                ver="${DARK_YELLOW}$ver${NO_COLOR}"
+            fi
+
+        elif [[ "$ver" == "$current_version" ]]; then
+            ver="=> $ver"
+
+            # Show current (but not default) as cyan
+            if [[ "$COLOR_SUPPORT" == "TRUE" ]]; then
+                ver="${LIGHT_GREEN}$ver${NO_COLOR}"
+            fi
+        else
+            # Show not current and not default) as white
+            ver="   $ver"
+        fi
+        echo -e "$ver"
+    done
+    )
+
+    erlvm_message ""
+    erlvm_message "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    erlvm_message "%                                                   %"
+    erlvm_message "%               =* : current and default            %"
+    erlvm_message "%               => : current                        %"
+    erlvm_message "%                * : default                        %"
+    erlvm_message "%                                                   %"
+    erlvm_message "%    use 'erlvm use [version]' to switch version    %"
+    erlvm_message "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    erlvm_message ""
+    erlvm_message ""
+}

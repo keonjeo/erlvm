@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+for function_file in $ERLVM_ROOT/scripts/functions/*; do
+	. "$function_file"
+done

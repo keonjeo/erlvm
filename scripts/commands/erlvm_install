@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+
+unzip_erlang_version_zip_file() {
+    local ERLANG_VERSION_ZIP_FILE=$FILE_PREFIX-$VERSION.$FILE_EXTENSION
+    cd $ERLANG_INSTALL_DIR
+    erlvm_dev_info "current path: `pwd`"
+
+    erlvm_message "unzipping... $ERLANG_TARS_LOCATION/$ERLANG_VERSION_ZIP_FILE"
+    erlvm_dev_info "unzip -q $ERLANG_TARS_LOCATION/$ERLANG_VERSION_ZIP_FILE -d $ERLANG_INSTALL_DIR"
+    unzip -q $ERLANG_TARS_LOCATION/$ERLANG_VERSION_ZIP_FILE -d $ERLANG_INSTALL_DIR
+    cd -
+    return 0
+}
+
+configure_erlang_source_code() {
+    if [ $(ls -1 $ERLANG_INSTALL_DIR | wc -l) -gt 1 ]; then
+        cd $ERLANG_INSTALL_DIR
+    else
+        cd $ERLANG_INSTALL_DIR/* # enter into the new subdirectory ( otp sub-directory )
+    fi
+
+    erlvm_dev_info "current path: `pwd`"
+
+    erlvm_message "Configuring... $ERLANG_INSTALL_DIR"
+    # Start to autoconf the erlang source code, and then make it and install it.
+    chmod +X otp_build
+    ./otp_build autoconf
+    ./configure --prefix="$ERLANG_INSTALL_DIR" --without-javac
+    cd -
+    return 0
+}
+
+do_you_want_to_continue_to_install() {
+    local cont="y"
+    local DONT_ASK="$1"
+    erlvm_dev_info "DONT_ASK => $DONT_ASK"
+    [[ "$DONT_ASK" != "Y" && "$DONT_ASK" != "y" ]] && echo "" && erlvm_message "Continue with installation?(y/n)" && read cont
+
+    if [[ "$cont" != "Y" && "$cont" != "y" ]]; then
+        erlvm_message "Erlang v$1 installation has been Cancelled"
+        rm -rf $ERLANG_INSTALL_DIR
+        exit 0
+    fi
+    return 0
+}
+
+complie_source_code_and_install_erlang() {
+    local ERLANG_VERSION_ZIP_FILE=$FILE_PREFIX-$VERSION.$FILE_EXTENSION
+    if [ $(ls -1 $ERLANG_INSTALL_DIR | wc -l) -gt 1 ]; then
+        cd $ERLANG_INSTALL_DIR
+    else
+        cd $ERLANG_INSTALL_DIR/* # enter into the new subdirectory ( otp sub-directory )
+    fi
+
+    erlvm_dev_info "current path: `pwd`"
+
+    erlvm_message "Compiling and installing $1"
+
+    export MAKEFLAGS=-j8
+    make && make install 
+    # make && make install 1> "/tmp/install_erlang_$VERSION.log" 2>&1
+
+    if [[ $? != 0 ]]; then
+        erlvm_error "Fail to compile the erlang source code."
+        return 1
+    fi
+
+    [[ ! -n "$ERLVM_DEV" ]] && rm -rf $ERLANG_TARS_LOCATION/$ERLANG_VERSION_ZIP_FILE
+    cd -
+    return 0
+}
+
+create_lib_links_into_erlang_bin_path() {
+    cd "$ERLANG_INSTALL_DIR/lib"
+    erlvm_dev_info "current path: `pwd`"
+
+    erlvm_message "Add links to path..."
+    # Escape "erlang/bin" and "erlang/erts" because that's already in the right place
+    for d in $(find . -type d -name "bin" | grep -v "erlang/bin" | grep -v "erlang/erts"); do
+        cd $d
+        for f in *; do
+            erlvm_message "Adding $d/$f to $ERLANG_INSTALL_DIR/bin..."
+            erlvm_dev_info "ln -s $ERLANG_INSTALL_DIR/lib/$d/$f $ERLANG_INSTALL_DIR/bin"
+            ln -s $ERLANG_INSTALL_DIR/lib/$d/$f $ERLANG_INSTALL_DIR/bin
+        done
+        cd -
+    done
+    cd -
+    return 0
+}
+
+check_if_version_installed() {
+    # Install the version if not installed yet
+    [[ -d "$ERLANG_VERSIONS_LOCATION/$VERSION" ]] && erlvm_message "
+    Erlang v$1 - This version is already installed at $ERLANG_VERSIONS_LOCATION
+    
+    Try to execute 'erlvm uninstall $1' and then execute 'erlvm install $1' again
+    " && exit 0
+}
+
+erlvm_install() {
+    erlvm_dev_info "\$@: $@, count: $#"
+
+    if [[ $# -eq 0 ]]; then
+        erlvm_message "erlvm install usage:
+
+        erlvm install erlang_version
+
+        for example:  erlvm install 22.3.2
+        "
+        exit 1
+    fi
+
+    local result=$(check_dependence)
+    if [[ -n "$result" ]]; then
+        erlvm_fatal "$result"
+    fi
+
+    local VERSION="$1"
+    local DONT_ASK="$(echo $2 | sed 's/-//')"
+
+    erlvm_download $VERSION
+
+    check_if_version_installed
+
+    ERLANG_INSTALL_DIR="$ERLANG_VERSIONS_LOCATION/$VERSION"
+    [[ ! -d $ERLANG_INSTALL_DIR ]] && mkdir -p $ERLANG_INSTALL_DIR > /dev/null 2>&1
+
+    unzip_erlang_version_zip_file
+
+    [[ -z $NOT_CONFIGURE_ERLANG_SOURCE_CODE ]] && configure_erlang_source_code
+
+    do_you_want_to_continue_to_install $DONT_ASK
+
+    [[ -z $NOT_COMPLIE_SOURCE_CODE ]] && (complie_source_code_and_install_erlang || erlvm_fatal "Fail to complie source code")
+    [[ -z $NOT_COMPLIE_SOURCE_CODE ]] && (create_lib_links_into_erlang_bin_path || erlvm_fatal "Fail to create lib links")
+
+    # Just only for development for erlvm project
+    if [[ -n $NOT_COMPLIE_SOURCE_CODE ]]; then
+        [[ ! -d ~/.erlvm_erlang_versions.back ]] && erlvm_fatal "~/.erlvm_erlang_versions.back does NOT exist on your home directory."
+        [[ -d ~/.erlvm/erlang_versions ]] && erlvm_dev_info "trying to remove ~/.erlvm/erlang_versions directory" && rm -rf ~/.erlvm/erlang_versions
+        erlvm_dev_info "copy ~/.erlvm_erlang_versions.back directory to ~/.erlvm/erlang_versions directory" && cp -rp ~/.erlvm_erlang_versions.back ~/.erlvm/erlang_versions
+    fi
+
+    erlvm_message ""
+    erlvm_message "Congratulations. Installation is Done!"
+    erlvm_message "Use 'erlvm default $1' to set this version as default or 'erlvm use $1' to start using this version right now"
+    erlvm_message ""
+}

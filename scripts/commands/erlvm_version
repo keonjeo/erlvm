@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+erlvm_version() {
+	erlvm_message "ERLVM v$ERLVM_VERSION has been installed at $ERLVM_ROOT"
+}

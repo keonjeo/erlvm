@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+__update_erlang_bin_soft_link() {
+	local VERSION="$1"
+
+	if [[ "$VERSION" == "" ]]; then
+		erlvm_warn "VERSION should NOT be an empty string"
+		return 1
+	fi
+
+	for directory in $ERLANG_VERSIONS_LOCATION/*; do
+		erlvm_dev_info "--------------------------"
+		erlvm_dev_info "directory => $directory"
+		erlvm_dev_info "--------------------------"
+		PATH="$(echo $PATH | sed -e "s,$directory/bin,,g ; s,^:,, ; s,::,:,g ; s,:$,,")"
+	done
+
+	if [[ -d $ERLANG_ROOT/bin ]]; then
+		rm -rf $ERLANG_ROOT/bin
+	fi
+
+	erlvm_dev_info "ln -s $ERLANG_VERSIONS_LOCATION/$VERSION/bin/ $ERLANG_ROOT/"
+	ln -s $ERLANG_VERSIONS_LOCATION/$VERSION/bin/ $ERLANG_ROOT/
+
+	if [[ ! -d $ERLVM_HOME/erlvm_config ]] ; then
+		erlvm_dev_info "
+		Counld not find $ERLVM_HOME/erlvm_config directory in your system.
+		erlvm will create this file automatically.
+		"
+		mkdir -p $ERLVM_HOME/erlvm_config
+	fi
+
+	if [[ ! -f $ERLVM_HOME/erlvm_config/erlang_current ]] ; then
+		erlvm_dev_info "
+		Counld not find $ERLVM_HOME/erlvm_config/erlang_current file in your system.
+		erlvm will create this file automatically.
+		"
+		touch $ERLVM_HOME/erlvm_config/erlang_current
+	fi
+
+	echo "$VERSION" > $ERLVM_HOME/erlvm_config/erlang_current
+}
+
+
+# set this erlang version to be the one available in the PATH
+# @params: erlang_version, e.g. 22.3.2
+erlvm_use() {
+    local VERSION=$1
+
+    if [[ -d $ERLANG_VERSIONS_LOCATION/$VERSION ]]; then
+        __update_erlang_bin_soft_link "$VERSION"
+	else
+        erlvm_warn "
+
+Erlang Version $VERSION has not been installed in $ERLANG_VERSIONS_LOCATION/$VERSION.
+Use 'erlvm install $VERSION' to install it.
+        "
+        return 1
+    fi
+}

@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+
+fetch_available_erlang_versions() {
+
+    ERLANG_REPOSITORY=$ERLANG_GITHUB
+    [[ -n $ERLANG_GITEE ]] && ERLANG_REPOSITORY=$ERLANG_GITEE
+
+    erlvm_dev_info "ERLANG_REPOSITORY => $ERLANG_REPOSITORY"
+
+    AVAILABLE_ERLANG_VERSIONS=$(git ls-remote -t $ERLANG_REPOSITORY | awk -F/ '{ print $NF }' | awk -F"OTP_R" '{print $1}' | sort)
+
+    if [[ $? -ne 0 ]]; then
+        erlvm_fatal "Failed to get version list from $ERLANG_REPOSITORY repository"
+    fi
+}
+
+erlvm_list_remote() {
+    erlvm_dev_info "ERLANG_DOWNLOAD_URL: $ERLANG_DOWNLOAD_URL"
+
+    erlvm_message ""
+    erlvm_message ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    erlvm_message ">>>                   Available Erlang Versions List                    >>>"
+    erlvm_message ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    erlvm_message ""
+
+    fetch_available_erlang_versions
+
+    for version in $AVAILABLE_ERLANG_VERSIONS; do
+        if [[ $version != *"R16B02"* ]] && [[ $version != *"erl_"* ]] && [[ $version != *"^{}"* ]]; then
+            version=`echo $version | sed "s/OTP-//g" | sed "s/OTP_//g"`
+            echo "   $version"
+        fi
+    done | sort -V
+
+    erlvm_message ""
+    erlvm_message ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    erlvm_message ">>>                                                                     >>>"
+    erlvm_message ">>>    use 'erlvm install [version]' to install your erlang version     >>>"
+    erlvm_message ">>>                                                                     >>>"
+    erlvm_message ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    erlvm_message ""
+}
+
+## ERLANG_DOWNLOAD_URL="http://erlang.org/download/"
+# list_available_erlang_versions() {
+#     wget -q -O - "$ERLANG_DOWNLOAD_URL" | \
+#     grep -ioP '(?<=HREF="OTP-)([0-9\.]+|R[-0-9-A-Z])(?=.README|.readme)' | \
+#     sed -e 's/^[[:space:]]*//;s/[[:space:]]*$//;s/ /_/' | \
+#     sort
+# }

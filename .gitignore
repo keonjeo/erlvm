@@ -1,0 +1,6 @@
+.*.s[a-w][a-z]
+
+erlang/
+erlang_tars/
+erlang_versions/
+erlvm_config/

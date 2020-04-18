@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+# set this erlang version as system default.
+# @params: erlang_version, e.g. 22.3.2
+erlvm_default() {
+    local VERSION=$1
+
+    if [[ -d $ERLANG_VERSIONS_LOCATION/$VERSION ]]; then
+
+        if [[ ! -d $ERLVM_HOME/erlvm_config ]] ; then
+            erlvm_dev_info "
+            Counld not find $ERLVM_HOME/erlvm_config directory in your system.
+            erlvm will create this file automatically.
+            "
+            mkdir -p $ERLVM_HOME/erlvm_config
+        fi
+
+        if [[ ! -f $ERLVM_HOME/erlvm_config/erlang_default ]] ; then
+            erlvm_dev_info "
+            Counld not find $ERLVM_HOME/erlvm_config/erlang_default file in your system.
+            erlvm will create this file automatically.
+            "
+            touch $ERLVM_HOME/erlvm_config/erlang_default
+        fi
+
+        echo "$VERSION" > $ERLVM_HOME/erlvm_config/erlang_default
+        erlvm_dev_info "=== erlvm_use $VERSION ==="
+        erlvm_use $VERSION
+    else
+        erlvm_error "
+        $VERSION is not installed yet.
+
+        Use 'erlvm install $VERSION' to install it
+        "
+        return 1
+    fi
+}

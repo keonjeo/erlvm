@@ -1,0 +1,20 @@
+[[ ! -d $ERLVM_ROOT/logs ]] && mkdir -p $ERLVM_ROOT/logs > /dev/null 2>&1
+
+export ERLVM_VERSION=$(cat "$ERLVM_ROOT/VERSION")
+export ERLVM_PATH_BACKUP="$PATH"
+export PATH="$PATH:$ERLVM_ROOT/bin:$ERLANG_ROOT/bin"
+
+# erlvm use erlang_default for new terminal session.
+if [[ -s $ERLVM_ROOT/erlvm_config/erlang_default ]]; then
+    default_version=$(cat $ERLVM_ROOT/erlvm_config/erlang_default)
+    if [[ -s $ERLVM_ROOT/erlvm_config/erlang_current ]]; then
+        current_version=$(cat $ERLVM_ROOT/erlvm_config/erlang_current)
+    fi
+
+    [[ "$current_version" != "" ]] && version=$current_version
+    [[ "$current_version" == "" ]] && version=$default_version
+
+    [[ -n $version ]] && erlvm use $version > /dev/null
+fi
+
+. "$ERLVM_ROOT/scripts/env/erlvm"

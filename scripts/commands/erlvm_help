@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+erlvm_help() {
+    erlvm_echo "
+
+Usage: erlvm [command]
+
+    Description:
+    ERLVM is the Erlang Version Manager.
+
+    Commands:
+    version       - print the erlvm version number
+    help          - display this usage text
+    list_remote   - list available versions
+    install       - install erlang version, pass -y can skip to check the dependence.
+    uninstall     - uninstall erlang version
+    remove        - remove the whole stuff related to this version
+    list          - list installed erlang versions
+    default       - set an erlang version as system default
+    use           - select an erlang version to use
+    download      - download erlang tar file
+    system        - leaving only the system version of ERLANG available
+    implode       - completely remove erlvm
+"
+}
